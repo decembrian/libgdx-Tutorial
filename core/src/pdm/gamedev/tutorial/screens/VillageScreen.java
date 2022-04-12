@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
@@ -14,7 +15,7 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import pdm.gamedev.tutorial.GameClass;
-import pdm.gamedev.tutorial.characters.Mushroom;
+import pdm.gamedev.tutorial.characters.Soldier;
 import pdm.gamedev.tutorial.scenes.Hud;
 import pdm.gamedev.tutorial.tools.B2WorldCreator;
 
@@ -25,7 +26,8 @@ public class VillageScreen implements Screen {
     private Hud hud;
     private TiledMap map;
     private OrthogonalTiledMapRenderer renderer;
-    private Mushroom player;
+    private Soldier player;
+    private TextureAtlas mushroomAtlas;
 
     //Box2d variables
     private World wolrd;
@@ -33,6 +35,7 @@ public class VillageScreen implements Screen {
 
     public VillageScreen(GameClass game) {
         this.game = game;
+        mushroomAtlas = new TextureAtlas("dark_creature.atlas");
         camera = new OrthographicCamera();
         gameViewport = new FitViewport(GameClass.V_WIDTH, GameClass.V_HEIGHT, camera);
         hud = new Hud(game.batch);
@@ -47,12 +50,13 @@ public class VillageScreen implements Screen {
 
         new B2WorldCreator(wolrd, map);
 
-        player = new Mushroom(wolrd);
+        player = new Soldier(wolrd, this);
     }
 
     public void update(float deltaTime){
         handleInput(deltaTime);
         wolrd.step(1/60f, 6, 2);
+        player.update(deltaTime);
 
         camera.update();
         renderer.setView(camera);
@@ -60,7 +64,7 @@ public class VillageScreen implements Screen {
 
     public void handleInput(float dt)
     {
-        float speed = 50f;
+        float speed = 150f;
         if(Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP)) {
             if(Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
                 player.b2body.setLinearVelocity(-speed,speed);
@@ -84,6 +88,10 @@ public class VillageScreen implements Screen {
             player.b2body.setLinearVelocity(0f, 0f);
     }
 
+    public TextureAtlas getAtlas(){
+        return mushroomAtlas;
+    }
+
     @Override
     public void show() {
 
@@ -99,6 +107,11 @@ public class VillageScreen implements Screen {
         renderer.render();
 
         b2dr.render(wolrd, camera.combined); //debug render for boxes
+
+        game.batch.setProjectionMatrix(camera.combined);
+        game.batch.begin();
+        player.draw(game.batch);
+        game.batch.end();
     }
 
     @Override
